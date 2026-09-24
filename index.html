@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EULER AI</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#080a0d;--panel:#101318;--panel2:#161a21;--border:#292e38;--text:#f5f7fa;--muted:#858c99;--accent:#42a5ff;--accent2:#6ab8ff}
+body{height:100vh;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+.app{height:100vh;display:flex}.sidebar{width:270px;height:100vh;padding:18px;background:#0d1015;border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.logo{margin-bottom:25px;font-size:23px;font-weight:800;letter-spacing:-1px}.logo-icon{color:var(--accent);margin-right:7px}
+.new-chat{width:100%;padding:13px 15px;border:1px solid var(--border);border-radius:12px;background:var(--panel2);color:white;cursor:pointer;text-align:left;font-size:14px;transition:.2s}.new-chat:hover{background:#1d222b;border-color:#3b414d}
+.sidebar-title{margin:25px 5px 10px;color:var(--muted);font-size:11px;letter-spacing:1px;text-transform:uppercase}.history{display:flex;flex-direction:column;gap:4px;overflow-y:auto}.history-item{padding:10px;border-radius:9px;color:#c7cbd2;font-size:13px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.history-item:hover{background:#191d25}
+.sidebar-bottom{margin-top:auto;color:#626976;font-size:11px;line-height:1.6}
+.main{min-width:0;flex:1;display:flex;flex-direction:column}.header{height:64px;padding:0 24px;background:rgba(8,10,13,.88);border-bottom:1px solid var(--border);display:flex;align-items:center;backdrop-filter:blur(15px);flex-shrink:0}.header-name{font-size:15px;font-weight:650}.header-status{margin-left:auto;color:#737a87;font-size:12px}.online-dot{display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;background:#42d883}
+.chat{flex:1;padding:30px 20px 175px;overflow-y:auto;scroll-behavior:smooth}.chat::-webkit-scrollbar{width:7px}.chat::-webkit-scrollbar-thumb{background:#292e37;border-radius:20px}
+.welcome{max-width:780px;margin:105px auto 0;text-align:center;animation:fadeUp .5s ease}.welcome-logo{width:62px;height:62px;margin:0 auto 22px;border-radius:19px;background:linear-gradient(135deg,#42a5ff,#236fc0);display:grid;place-items:center;font-size:30px;box-shadow:0 15px 55px rgba(66,165,255,.25)}.welcome h1{margin-bottom:12px;font-size:clamp(34px,5vw,52px);letter-spacing:-2px}.welcome p{color:var(--muted);font-size:15px;line-height:1.6}
+.suggestions{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:32px}.suggestion{padding:15px;border:1px solid var(--border);border-radius:13px;background:#101318;color:#c8ccd4;text-align:left;cursor:pointer;transition:.2s}.suggestion:hover{background:#171b23;border-color:#444b59;transform:translateY(-1px)}.suggestion strong{display:block;margin-bottom:5px;color:#e8eaf0;font-size:13px}.suggestion span{color:#777e8b;font-size:12px}
+.message{max-width:850px;margin:0 auto 30px;display:flex;gap:14px;animation:fadeUp .25s ease}.avatar{width:34px;height:34px;border-radius:10px;background:#20252e;display:grid;place-items:center;color:white;font-size:10px;font-weight:700;flex-shrink:0}.user .avatar{background:var(--accent)}.message-body{min-width:0;flex:1}.message-name{margin-bottom:6px;color:#777e8b;font-size:11px}.message-content{color:#e6e8ec;font-size:14px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
+.typing{display:flex;gap:5px;padding:8px 0}.typing span{width:7px;height:7px;border-radius:50%;background:#777e8b;animation:bounce 1.2s infinite}.typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+.composer-area{position:fixed;right:0;bottom:0;left:270px;padding:20px;padding-top:45px;background:linear-gradient(transparent,var(--bg) 35%)}.composer{max-width:850px;margin:auto;padding:9px;border:1px solid #353a46;border-radius:19px;background:#151920;display:flex;align-items:flex-end;gap:8px;box-shadow:0 15px 50px rgba(0,0,0,.4);transition:.2s}.composer:focus-within{border-color:#4c5565}
+textarea{max-height:160px;flex:1;padding:11px;border:none;outline:none;resize:none;background:transparent;color:white;font-family:inherit;font-size:14px;line-height:1.5}textarea::placeholder{color:#656c79}.send{width:42px;height:42px;border:none;border-radius:12px;background:var(--accent);color:white;cursor:pointer;font-size:19px;transition:.2s;flex-shrink:0}.send:hover{background:var(--accent2);transform:translateY(-1px)}.send:disabled{opacity:.4;cursor:default;transform:none}.disclaimer{max-width:850px;margin:8px auto 0;color:#555c69;text-align:center;font-size:10px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+@media(max-width:700px){.sidebar{display:none}.composer-area{left:0;padding:12px;padding-top:35px}.header{padding:0 17px}.chat{padding-right:14px;padding-left:14px}.welcome{margin-top:70px}.welcome h1{font-size:36px}.suggestions{grid-template-columns:1fr}.message{gap:10px}.avatar{width:30px;height:30px}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+<div class="logo"><span class="logo-icon">✦</span>EULER</div>
+<button class="new-chat" onclick="newChat()">＋ &nbsp; New conversation</button>
+<div class="sidebar-title">Conversations</div>
+<div class="history" id="history"></div>
+<div class="sidebar-bottom">EULER AI<br>Web-enabled assistant</div>
+</aside>
+
+<main class="main">
+<header class="header">
+<div class="header-name">EULER AI</div>
+<div class="header-status"><span class="online-dot"></span>Online</div>
+</header>
+
+<section class="chat" id="chat">
+<div class="welcome" id="welcome">
+<div class="welcome-logo">✦</div>
+<h1>What can I help with?</h1>
+<p>Ask questions, brainstorm ideas, write, learn, or search the web.</p>
+<div class="suggestions">
+<button class="suggestion" onclick="useSuggestion('Search the web for the latest technology news.')"><strong>🌐 Search the web</strong><span>Find current information</span></button>
+<button class="suggestion" onclick="useSuggestion('Explain artificial intelligence simply.')"><strong>💡 Explain something</strong><span>Learn difficult concepts</span></button>
+<button class="suggestion" onclick="useSuggestion('Give me creative ideas for a school project.')"><strong>✨ Get creative</strong><span>Generate new ideas</span></button>
+<button class="suggestion" onclick="useSuggestion('Help me write a professional message.')"><strong>✍️ Write something</strong><span>Create better text</span></button>
+</div>
+</div>
+</section>
+
+<div class="composer-area">
+<form class="composer" id="form">
+<textarea id="input" rows="1" placeholder="Message EULER..." autocomplete="off"></textarea>
+<button class="send" id="send" type="submit">↑</button>
+</form>
+<div class="disclaimer">EULER can make mistakes. Check important information.</div>
+</div>
+</main>
+</div>
+
+<script>
+const chat=document.getElementById("chat");
+const input=document.getElementById("input");
+const form=document.getElementById("form");
+const send=document.getElementById("send");
+const historyBox=document.getElementById("history");
+let messages=[];
+let conversations=JSON.parse(localStorage.getItem("euler_conversations")||"[]");
+
+function addMessage(role,text){
+const welcome=document.getElementById("welcome");
+if(welcome)welcome.remove();
+const wrapper=document.createElement("div");
+wrapper.className="message "+role;
+const avatar=document.createElement("div");
+avatar.className="avatar";
+avatar.textContent=role==="user"?"YOU":"E";
+const body=document.createElement("div");
+body.className="message-body";
+const name=document.createElement("div");
+name.className="message-name";
+name.textContent=role==="user"?"You":"EULER";
+const content=document.createElement("div");
+content.className="message-content";
+content.textContent=text;
+body.appendChild(name);
+body.appendChild(content);
+wrapper.appendChild(avatar);
+wrapper.appendChild(body);
+chat.appendChild(wrapper);
+scrollToBottom();
+}
+
+function showThinking(){
+const wrapper=document.createElement("div");
+wrapper.id="thinking";
+wrapper.className="message assistant";
+wrapper.innerHTML=`<div class="avatar">E</div><div class="message-body"><div class="message-name">EULER</div><div class="typing"><span></span><span></span><span></span></div></div>`;
+chat.appendChild(wrapper);
+scrollToBottom();
+}
+
+function removeThinking(){
+const thinking=document.getElementById("thinking");
+if(thinking)thinking.remove();
+}
+
+form.addEventListener("submit",async function(event){
+event.preventDefault();
+const text=input.value.trim();
+if(!text||send.disabled)return;
+
+messages.push({role:"user",content:text});
+addMessage("user",text);
+input.value="";
+resizeInput();
+send.disabled=true;
+showThinking();
+
+try{
+const response=await fetch("/api/chat",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({messages})
+});
+
+const data=await response.json();
+removeThinking();
+
+if(!response.ok)throw new Error(data.error||"Server error");
+
+const answer=data.answer||"EULER could not generate a response.";
+messages.push({role:"assistant",content:answer});
+addMessage("assistant",answer);
+saveCurrentChat();
+
+}catch(error){
+console.error(error);
+removeThinking();
+addMessage("assistant","I couldn't connect to EULER's AI server. Make sure the backend is running and your API key is configured.");
+}finally{
+send.disabled=false;
+input.focus();
+}
+});
+
+input.addEventListener("keydown",function(event){
+if(event.key==="Enter"&&!event.shiftKey){
+event.preventDefault();
+form.requestSubmit();
+}
+});
+
+input.addEventListener("input",resizeInput);
+
+function resizeInput(){
+input.style.height="auto";
+input.style.height=Math.min(input.scrollHeight,160)+"px";
+}
+
+function useSuggestion(text){
+input.value=text;
+resizeInput();
+input.focus();
+form.requestSubmit();
+}
+
+function newChat(){
+if(messages.length>0){
+conversations.unshift({
+title:messages[0]?.content||"New conversation",
+messages:[...messages]
+});
+conversations=conversations.slice(0,15);
+localStorage.setItem("euler_conversations",JSON.stringify(conversations));
+}
+messages=[];
+chat.innerHTML=`
+<div class="welcome" id="welcome">
+<div class="welcome-logo">✦</div>
+<h1>What can I help with?</h1>
+<p>Ask questions, brainstorm ideas, write, learn, or search the web.</p>
+<div class="suggestions">
+<button class="suggestion" onclick="useSuggestion('Search the web for the latest technology news.')"><strong>🌐 Search the web</strong><span>Find current information</span></button>
+<button class="suggestion" onclick="useSuggestion('Explain artificial intelligence simply.')"><strong>💡 Explain something</strong><span>Learn difficult concepts</span></button>
+<button class="suggestion" onclick="useSuggestion('Give me creative ideas for a school project.')"><strong>✨ Get creative</strong><span>Generate new ideas</span></button>
+<button class="suggestion" onclick="useSuggestion('Help me write a professional message.')"><strong>✍️ Write something</strong><span>Create better text</span></button>
+</div>
+</div>`;
+loadHistory();
+input.focus();
+}
+
+function saveCurrentChat(){
+localStorage.setItem("euler_current_chat",JSON.stringify(messages));
+}
+
+function loadHistory(){
+historyBox.innerHTML="";
+conversations.forEach((conversation,index)=>{
+const item=document.createElement("div");
+item.className="history-item";
+item.textContent=conversation.title;
+item.onclick=()=>loadConversation(index);
+historyBox.appendChild(item);
+});
+}
+
+function loadConversation(index){
+const conversation=conversations[index];
+if(!conversation)return;
+messages=[...conversation.messages];
+chat.innerHTML="";
+messages.forEach(message=>addMessage(message.role,message.content));
+}
+
+function scrollToBottom(){
+requestAnimationFrame(()=>{chat.scrollTop=chat.scrollHeight;});
+}
+
+loadHistory();
+input.focus();
+</script>
+</body>
+</html>
